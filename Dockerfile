@@ -1,19 +1,12 @@
-# Build Stage
-FROM maven:3.8.4-eclipse-temurin-17 AS build
+# Dockerfile (backend)
+FROM maven:3.8.4-openjdk-17-slim AS build
 WORKDIR /app
 COPY pom.xml .
 COPY src ./src
 RUN mvn clean package -DskipTests
 
-# Runtime Stage
-FROM eclipse-temurin:17-jre
+FROM openjdk:17-jre-slim
 WORKDIR /app
 COPY --from=build /app/target/*.jar app.jar
-
-# Environment configuration (optional fallback)
-ENV DATABASE_URL=jdbc:postgresql://postgres:5432/postgres
-ENV DATABASE_USER=admin
-ENV DATABASE_PASSWORD=1234
-
 EXPOSE 8081
 ENTRYPOINT ["java", "-jar", "app.jar"]
