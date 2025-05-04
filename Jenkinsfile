@@ -1,12 +1,6 @@
 pipeline {
     agent any
 
-    environment {
-        DOCKER_IMAGE = 'forex'
-        DOCKER_TAG = 'latest'
-        DOCKER_CREDENTIALS_ID = 'docker-hub-credentials'
-    }
-
     stages {
         stage('Checkout') {
             steps {
@@ -16,29 +10,22 @@ pipeline {
 
         stage('Build') {
             steps {
-                sh '''
-                echo "Building image: ${DOCKER_IMAGE}:${DOCKER_TAG}"
-                docker build -t ${DOCKER_IMAGE}:${DOCKER_TAG} .
-                '''
+                sh 'mvn clean package -DskipTests'
             }
         }
 
-        stage('Verify Image Build') {
+        stage('Docker Build') {
             steps {
-                sh '''
-                echo "Checking built images..."
-                docker images | grep ${DOCKER_IMAGE}
-                '''
+                sh 'docker build -t rohith0702/forex:latest .'
             }
         }
 
-        stage('Push Docker Image') {
+        stage('Push to Docker Hub') {
             steps {
-                withCredentials([usernamePassword(credentialsId: "${DOCKER_CREDENTIALS_ID}", usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
+                withCredentials([string(credentialsId: 'docker-hub-password', variable: 'DOCKER_PASSWORD')]) {
                     sh '''
-                    echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin
-                    docker tag ${DOCKER_IMAGE}:${DOCKER_TAG} $DOCKER_USER/${DOCKER_IMAGE}:${DOCKER_TAG}
-                    docker push $DOCKER_USER/${DOCKER_IMAGE}:${DOCKER_TAG}
+                        echo $DOCKER_PASSWORD | docker login -u rohith0702 --password-stdin
+                        docker push rohith0702/forex:latest
                     '''
                 }
             }
