@@ -16,7 +16,19 @@ pipeline {
 
         stage('Build') {
             steps {
-                sh 'docker build -t ${DOCKER_IMAGE}:${DOCKER_TAG} .'
+                sh '''
+                echo "Building image: ${DOCKER_IMAGE}:${DOCKER_TAG}"
+                docker build -t ${DOCKER_IMAGE}:${DOCKER_TAG} .
+                '''
+            }
+        }
+
+        stage('Verify Image Build') {
+            steps {
+                sh '''
+                echo "Checking built images..."
+                docker images | grep ${DOCKER_IMAGE}
+                '''
             }
         }
 
@@ -25,12 +37,11 @@ pipeline {
                 withCredentials([usernamePassword(credentialsId: "${DOCKER_CREDENTIALS_ID}", usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
                     sh '''
                     echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin
-                    docker push ${DOCKER_IMAGE}:${DOCKER_TAG}
+                    docker tag ${DOCKER_IMAGE}:${DOCKER_TAG} $DOCKER_USER/${DOCKER_IMAGE}:${DOCKER_TAG}
+                    docker push $DOCKER_USER/${DOCKER_IMAGE}:${DOCKER_TAG}
                     '''
                 }
             }
         }
-
-       
     }
 }
